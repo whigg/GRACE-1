@@ -4,6 +4,7 @@
 # HEADER
 ###########################################
 import numpy as np
+import scipy.stats
 from os import listdir
 import datetime as dt
 import matplotlib as mpl
@@ -81,27 +82,26 @@ for std in (station):
 # calculate temporal trends by simple linear regression
 #######################################
 trend_flow = {}
+flow = {}
+c = {}
+m = {}
 for std in station:
 	# copy the non-missing station data and corresponding years into a new array
 	count = 0
 	for i in range(np.shape(yL7[std])[0]):
 		if np.absolute(yL7[std][i][0]+1)>0.0001:  # if not missing
 			count = count + 1
-	flow = np.empty((count,2))
+	flow[std] = np.empty((count,2))
 	count = 0
 	for i in range(np.shape(yL7[std])[0]):
-#		print "std=", std
-#		print "i=", i
-#		print "count=", count
-#		pdb.set_trace()
 		if np.absolute(yL7[std][i][0]+1)>0.0001:  # if not missing
-			flow[count][0] = start_year + i
-			flow[count][1] = yL7[std][count][0]
+			flow[std][count][0] = start_year + i
+			flow[std][count][1] = yL7[std][count][0]
 			count = count + 1
 	# calculate trend by simple linear regression
-	A = np.array([flow[:,0], np.ones(np.shape(flow)[0])])
-	m, c = np.linalg.lstsq(A.T, flow[:,1])[0]    # y = mx + c 
-	trend_flow[std] = m   # flow trend in cfs/yr
+	A = np.array([flow[std][:,0], np.ones(np.shape(flow[std])[0])])
+	m[std], c[std] = np.linalg.lstsq(A.T, flow[std][:,1])[0]    # y = mx + c 
+	trend_flow[std] = m[std]   # flow trend in cfs/yr
 
 trend_storage = {}
 if area_index==0:   # using basin area reported by Brutsaert
@@ -110,17 +110,31 @@ else:   # using drainage reported by USGS
 	area = area_USGS
 
 for i in range(np.shape(area)[0]):
-#	print trend_flow['0' + str(int(area[i][0]))]
 	std = '0' + str(int(area[i][0]))
 	trend_storage[std] = trend_flow[std] * K / area[i][1]  # storage trend in (cfs*day)/(yr*km2)
 	trend_storage[std] = trend_storage[std] * np.power(30.48,3) * 86400 / np.power(10,9) # storage trend in mm/yr
 
+# calculate p value (two-tailed)
+p = {}
+for std in station:
+	SSE = np.sum(np.power(flow[std][:,1]-(c[std]+m[std]*flow[std][:,0]), 2))
+	s_2 = SSE / (np.shape(flow[std])[0] - 2)
+	sB1 = np.sqrt(s_2 / np.sum(np.power(flow[std][:,0]-np.mean(flow[std][:,0]), 2)))
+	t = trend_flow[std] / sB1
+	tcdf = scipy.stats.t.cdf(t, np.shape(flow[std])[0])
+	if t<0:  # if trend<0
+		p[std] = tcdf * 2
+	else:   # if trend.=0
+		p[std] = (1-tcdf) * 2
 
-pdb.set_trace()
-
-
-
-
+# write storage trend and corresponding p value into file
+f = open('trend_%s_%s' %(start_year,end_year), 'w')
+for i in range(np.shape(area)[0]):
+	std = '0' + str(int(area[i][0]))
+	if p[std]>=0.005:
+		f.write("%s %.5f %.2f\n" %(std, trend_storage[std], p[std]))
+	else:
+		f.write("%s %.5f %.1g\n" %(std, trend_storage[std], p[std]))
 
 
 

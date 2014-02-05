@@ -1,0 +1,14 @@
+flow.py
+	calculate trend and corresponding p value
+
+trend_[start_year]_[end_year]
+	the output of flow.py
+	[station] [trend] [p value]
+
+trend_Bru_1988_2007
+	the trend and p value reported in Brutsaert 2009 paper (for 1988-2007)
+
+diff.cal-Bru.perc
+	the difference between our calculated trend and p-value and those reported in Brutsaert's paper (for 1988-2007)
+	[station] [trend diff (cal-Bru)] [trend diff percentage] [p-value diff] [p-value diff perc]
+
