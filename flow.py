@@ -15,10 +15,10 @@ import pdb
 # user defined
 ##########################################
 data_path = "/usr1/ymao/GRACE/data_streamflow/streamflow_1988_2012"  # data unit: cfs
-start_year = 1988
-end_year = 2007
+start_year = 2003 
+end_year = 2012
 K = 45   # characteristic time scale; unit: days
-area_index = 0  # 0 for using basin area by Brutsaert; 1 for using drainage area by USGS
+area_index = 1  # 0 for using basin area by Brutsaert; 1 for using drainage area by USGS
 
 ##########################################
 # load data
@@ -29,6 +29,8 @@ for filename in listdir(data_path):
 
 area_Bru = np.loadtxt("/usr1/ymao/GRACE/data_streamflow/station_area_Bru")
 area_USGS = np.loadtxt("/usr1/ymao/GRACE/data_streamflow/station_area_Bru")
+
+station_order = np.loadtxt("/usr1/ymao/GRACE/station.order")
 
 #########################################
 # calculate 7-day low flow
@@ -96,7 +98,7 @@ for std in station:
 	for i in range(np.shape(yL7[std])[0]):
 		if np.absolute(yL7[std][i][0]+1)>0.0001:  # if not missing
 			flow[std][count][0] = start_year + i
-			flow[std][count][1] = yL7[std][count][0]
+			flow[std][count][1] = yL7[std][i][0]
 			count = count + 1
 	# calculate trend by simple linear regression
 	A = np.array([flow[std][:,0], np.ones(np.shape(flow[std])[0])])
@@ -128,18 +130,41 @@ for std in station:
 		p[std] = (1-tcdf) * 2
 
 # write storage trend and corresponding p value into file
-f = open('trend_%s_%s' %(start_year,end_year), 'w')
-for i in range(np.shape(area)[0]):
-	std = '0' + str(int(area[i][0]))
+f = open('/usr1/ymao/GRACE/output/trend_%s_%s_K%d' %(start_year,end_year,K), 'w')
+for i in range(np.shape(station_order)[0]):
+	std = '0' + str(int(station_order[i]))
 	if p[std]>=0.005:
 		f.write("%s %.5f %.2f\n" %(std, trend_storage[std], p[std]))
 	else:
 		f.write("%s %.5f %.1g\n" %(std, trend_storage[std], p[std]))
+f.close()
 
-
-
-
-
-
-
-
+## write yL7  (41 columns, each column is the yL7 for all years at one basin)
+# # convert cfs to mm/d
+#yL7_mm_d = {}
+#for std in station:
+#	yL7_mm_d[std] = np.empty(end_year-start_year+1)
+#
+#for i in range(np.shape(area)[0]):
+#	std = '0' + str(int(area[i][0]))
+#	for y in range(end_year-start_year+1):
+#		if np.absolute(yL7[std][y][0]+1)<0.0001:   # if missing year
+#			yL7_mm_d[std][y] = -1
+#		else:  # if not missing
+#			yL7_mm_d[std][y] = yL7[std][y][0] / area[i][1]   # cfs/km2
+#			yL7_mm_d[std][y] = yL7_mm_d[std][y] * np.power(30.48,3) * 86400 / np.power(10,9) # mm/d 
+#
+# # write to file
+#f = open('/usr1/ymao/GRACE/output/yL7_%s_%s' %(start_year,end_year), 'w')
+#for y in range(end_year-start_year+1):
+#	for i in range(np.shape(station_order)[0]):
+#		std = '0' + str(int(station_order[i]))
+#		if np.absolute(yL7[std][y][0]+1)<0.0001:  # if missing year
+#			f.write("%d " %yL7[std][y][0])
+#		else:  # if not missing
+#			f.write("%f " %yL7_mm_d[std][y]) 
+#	f.write("\n")
+#f.close()
+#
+#
+#
