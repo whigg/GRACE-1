@@ -5,10 +5,109 @@ trend_[start_year]_[end_year]
 	the output of flow.py
 	[station] [trend] [p value]
 
-trend_Bru_1988_2007
-	the trend and p value reported in Brutsaert 2009 paper (for 1988-2007)
-
 diff.cal-Bru.perc
 	the difference between our calculated trend and p-value and those reported in Brutsaert's paper (for 1988-2007)
 	[station] [trend diff (cal-Bru)] [trend diff percentage] [p-value diff] [p-value diff perc]
+
+big.diff.stations
+	stations which has a calculated trend for 1988-2007 different than Bru's trend for >5%
+	[station] [trend diff percentage (cal-Bru)] [p-value diff percentage (cal-Bru)] 
+
+compare.yL7
+	comparing calculated yL7 with yL7 calculated by Bru
+	each row is a year, 20 rows altother (1988-2007)
+	the first 41 colums are Bru's data; the second 41 columns are our calculated data
+	in the order of station.order
+
+diff.yL7
+	difference between Bru's yL7 and our calculated yL7 (Bru's - ours)
+	each row is a year, 20 rows altother (1988-2007)
+	each column is a basin, in the order of station.order
+
+plot.yL7.diff.py
+	python script to plot yL7 difference
+
+well_data.py
+	process USGS well data
+
+USGS_well_data
+	USGS well data
+
+###########################
+# input
+###########################
+station.order
+	list of station ID in the order of listed in Bru's paper (same order as Bru's raw yL7 data))
+
+station.basin
+	matching stations with 11 basins
+	[station] [number of basin] [basin name]
+
+basin.list
+	a list of the names of 11 larger basins (ordered)
+
+bas_map
+	list of 11 basins (same order as listed in Bru's paper)
+	directly from Liz
+	not read by scripts
+
+basin.values.ori
+	the original values in the GIS map for the 11 basins
+	(in the order of listed bas_map)
+
+###########################
+# output
+###########################
+trend_[start year]_[end year]_[K*]
+	trend at each station (for specified K value)
+	[station] [trend(mm/yr)] [p-value]
+
+yL7_[start year]_[end year]
+	7-day annual low flow
+	each row: a year
+	each column: a station (in the order of station.list)
+
+yL7_occur_month_[start year]_[end year]
+	the occurrence month of the 7-day low flow
+	same format as yL7_[start year]_[end year]
+
+trend_[start year]_[end year]_map
+	the areal mean storage trend for 11 basins
+	each row: a bain (in the order of basin.list)
+	first column: the values in the original GIS raster file (gwtrends2.asc)
+	second column: trend values (to substitute the values in the first column)
+	this file can be directly read by rewrite.scr
+
+trend_resid_[start year]_[end year]_map
+	the areal mean standard deviation for residual of storage trend for 11 basins
+	each row: a bain (in the order of basin.list)
+	first column: the values in the original GIS raster file (gwtrends2.asc)
+	second column: SD values (to substitute the values in the first column)
+	this file can be directly read by rewrite.scr
+
+trend_flow_larger_basin_[start year]_[end year]
+	regression coefficients for flow trend of 11 larger basins
+	each row: a basin (in the order of basin.list)
+	the regression is: y = m * x + c, where x is year; y is areal mean annual low flow
+	first column: m [mm/(d*yr)]; second column: c [mm/d]
+
+###########################
+In Brutsaert_data directory
+###########################
+Low flows east of Rockies (1).xlsx
+	raw Excel data from Liz
+
+low_flow_from_Bru.xlsx
+	revise the format of 'residual' sheet in the above Excel
+
+yL7_Bru_1988_2007
+	formatted Bru's yL7 data
+	each row is yL7 for a year (1988-2007)
+	each column is a basin, in the order of station.order
+	unit: mm/d
+
+trend_Bru_1988_2007
+	the trend and p value reported in Brutsaert 2009 paper (for 1988-2007)
+
+
 
