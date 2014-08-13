@@ -90,7 +90,7 @@ for i in range(nbasin):
 
 ################## process data - check if data type is consistent for each site ################
 print 'Processing data...'
-well_data = []   # basin; site; [siteID; date; water level below surface (ft); lat; lon]
+well_data = []   # basin; site; [siteID; date; water level below surface (ft); lat; lon; siteType]
 for i in range(nbasin): 
 	# initialize
 	well_data.append([])
@@ -102,7 +102,7 @@ for i in range(nbasin):
 		flag = 0  # 'water level below surface' exists
 	elif well_data_ori[i][0][5]!='':
 		flag = 1 # 'water level above datum' exists
-	# find surface height, lat and lon of the site
+	# find surface height, lat, lon and siteType of the site
 	for k in range(len(site_info[i])): 
 		if site_info[i][k][0]==siteID:
 			if site_info[i][k][3]!='':
@@ -117,6 +117,7 @@ for i in range(nbasin):
 				lon = float(site_info[i][k][2])
 			else:
 				lon = ''
+			site_type = site_info[i][k][4]
 			break
 
 	for j in range(len(well_data_ori[i])):
@@ -128,7 +129,7 @@ for i in range(nbasin):
 				flag = 0  # 'water level below surface' exists
 			elif well_data_ori[i][j][5]!='':
 				flag = 1 # 'water level above datum' exists
-			for k in range(len(site_info[i])):  # find surface height, lat and lon of the site
+			for k in range(len(site_info[i])):  # find surface height, lat, lon and siteType of the site
 				if site_info[i][k][0]==siteID:
 					if site_info[i][k][3]!='':
 						surface_height = float(site_info[i][k][3])
@@ -142,21 +143,22 @@ for i in range(nbasin):
 						lon = float(site_info[i][k][2])
 					else:
 						lon = ''
+					site_type = site_info[i][k][4]
 					break
 
 		if well_data_ori[i][j][7]=='':  # if there is no status code
 			if well_data_ori[i][j][4]!='':  # if 'water level below surface' is available
 				if flag!=0:
 					print 'Warning1: not consistant at %s, %s' %(basin_list[i], siteID)
-					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],surface_height-float(well_data_ori[i][j][4]), lat, lon]) # convert 'below' to 'datum'
+					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],surface_height-float(well_data_ori[i][j][4]), lat, lon, site_type]) # convert 'below' to 'datum'
 				else:
-					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],float(well_data_ori[i][j][4]), lat, lon])
+					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],float(well_data_ori[i][j][4]), lat, lon, site_type])
 			elif well_data_ori[i][j][5]!='':  # if 'water level above datum' is available, convert to 'water level below surface'
 				if flag!=1:
 					print 'Warning2: not consistent at %s, %s' %(basin_list[i], site_ID)
-					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],surface_height-float(well_data_ori[i][j][5]), lat, lon])  # convert 'datum' to 'below'
+					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],surface_height-float(well_data_ori[i][j][5]), lat, lon, site_type])  # convert 'datum' to 'below'
 				else:
-					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],float(well_data_ori[i][j][5]), lat, lon])
+					well_data[i][count_site].append([well_data_ori[i][j][0],well_data_ori[i][j][1],float(well_data_ori[i][j][5]), lat, lon, site_type])
 
 		if len(well_data[i][count_site])==0: # delete no-valid-data site
 			del well_data[i][-1]
@@ -209,7 +211,7 @@ for i in range(nbasin):
 
 ################ select data (select the first data in every time segment) ####################
 print '\nSelecting data...'
-well_data_sel = []  # basin; site; [siteID; date; water level below surface (ft); lat; lon]
+well_data_sel = []  # basin; site; [siteID; date; water level below surface (ft); lat; lon; siteType]
 for i in range(nbasin):
 	well_data_sel.append([])
 	for j in range(len(well_data[i])):
@@ -221,7 +223,7 @@ for i in range(nbasin):
 				if len(date_str)==3:
 					date = dt.datetime(year=int(date_str[2]), month=int(date_str[0]), day=int(date_str[1]))
 					if (date-first_day[t]).days>=0 and (last_day[t]-date).days>=0: # if this date is within this time segment
-						well_data_sel[i][j].append([well_data[i][j][k][0],well_data[i][j][k][1],well_data[i][j][k][2],well_data[i][j][k][3],well_data[i][j][k][4]])
+						well_data_sel[i][j].append([well_data[i][j][k][0],well_data[i][j][k][1],well_data[i][j][k][2],well_data[i][j][k][3],well_data[i][j][k][4],well_data[i][j][k][5]])
 						start_search_ind = k + 1
 						break
 					elif (date-last_day[t]).days>0: # if this date is after this time segment
@@ -247,7 +249,7 @@ for i in range(nbasin):
 		if flag==0:
 			well_data_uni[i].append([])
 			for k in range(len(well_data_sel[i][j])):
-				well_data_uni[i][count_site].append([well_data_sel[i][j][k][0],well_data_sel[i][j][k][1],well_data_sel[i][j][k][2],well_data_sel[i][j][k][3],well_data_sel[i][j][k][4]])
+				well_data_uni[i][count_site].append([well_data_sel[i][j][k][0],well_data_sel[i][j][k][1],well_data_sel[i][j][k][2],well_data_sel[i][j][k][3],well_data_sel[i][j][k][4],well_data_sel[i][j][k][5]])
 			count_site = count_site + 1
 
 for i in range(nbasin):
@@ -256,7 +258,7 @@ for i in range(nbasin):
 
 ######################### plot trend - each site ###########################
 print '\nCalculating and plotting trend at each site...'
-well_trend = []  # basin; site; [siteID, lat, lon, trend (mm/yr)]
+well_trend = []  # basin; site; [siteID, lat, lon, trend (mm/yr), siteType]
 for i in range(nbasin):
 	well_trend.append([])
 	for j in range(len(well_data_uni[i])):
@@ -274,9 +276,10 @@ for i in range(nbasin):
 		y = data_temp[:,1] * 12 * 25.4 # convert unit to: mm
 		w = np.linalg.lstsq(A.T,y)[0]  # trend: w[0]; unit: mm/day
 		trend = w[0] * 365.25 # convert unit to: mm/yr
-		well_trend[i][j].append([well_data_uni[i][j][0][0],well_data_uni[i][j][0][3],well_data_uni[i][j][0][4],trend])
+		well_trend[i][j].append([well_data_uni[i][j][0][0],well_data_uni[i][j][0][3],well_data_uni[i][j][0][4],trend, well_data_uni[i][j][0][5]])
 #		print well_trend[i][j][0][3]
 
+# plot all sites
 fig = plt.figure(figsize=(10,10))
 ax = fig.add_axes([0.1,0.1,0.8,0.8])
 m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
@@ -299,6 +302,74 @@ plt.title('Well data trend, 2002-2013, all sites', fontsize=16)
 
 fig.savefig('%s/well_trend_map_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
+# plot confined sites
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
 
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+#		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		if well_trend[i][j][0][4]=='C':
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3], cmap=cm.GMT_no_green_r, vmax=100, vmin=-100, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Trend (mm/year)', fontsize=16)
+plt.title('Well data trend, 2002-2013, confined sites', fontsize=16)
 
+fig.savefig('%s/well_trend_map_confined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
+# plot unconfined sites
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
+
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+#		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		if well_trend[i][j][0][4]=='U':
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3], cmap=cm.GMT_no_green_r, vmax=100, vmin=-100, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Trend (mm/year)', fontsize=16)
+plt.title('Well data trend, 2002-2013, unconfined sites', fontsize=16)
+
+fig.savefig('%s/well_trend_map_unconfined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+
+# plot unknown-type sites
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
+
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+#		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		if well_trend[i][j][0][4]!='C' and well_trend[i][j][0][4]!='U':
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3], cmap=cm.GMT_no_green_r, vmax=100, vmin=-100, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Trend (mm/year)', fontsize=16)
+plt.title('Well data trend, 2002-2013, unknown-type sites', fontsize=16)
+
+fig.savefig('%s/well_trend_map_unknown_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
