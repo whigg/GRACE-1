@@ -445,7 +445,7 @@ for i in range(nbasin):
 #		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
 		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
 		if well_trend[i][j][0][4]=='C' and well_trend[i][j][0][6]!='':
-			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=100, vmin=-100, linewidths=0)
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
 cbar = plt.colorbar(cs, fraction=0.045)
 cbar.set_label('Trend (mm/year)', fontsize=16)
 plt.title('GW storage trend, Climate Response Network, 2002-2013, confined sites', fontsize=16)
