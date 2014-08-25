@@ -185,6 +185,19 @@ for i in range(nbasin):
 	count_site = 0
 	for j in range(len(well_data_sel[i])):
 		flag = 0
+
+		date_str_first_data = well_data_sel[i][j][0][1].split('/')
+		if len(date_str_first_data)==3:
+			date_first_data = dt.datetime(year=int(date_str_first_data[2]), month=int(date_str_first_data[0]), day=int(date_str_first_data[1]))
+			if (date_first_data-start_date).days>uni_window*365:  # if the first day is too late
+				flag = 1
+
+		date_str_last_data = well_data_sel[i][j][len(well_data_sel[i][j])-1][1].split('/')
+		if len(date_str_last_data)==3:
+			date_last_data = dt.datetime(year=int(date_str_last_data[2]), month=int(date_str_last_data[0]), day=int(date_str_last_data[1]))
+			if (end_date-date_last_data).days>uni_window*365:  # if the last day is too early
+				flag = 1
+
 		for k in range(len(well_data_sel[i][j])-1):
 			date_str = well_data_sel[i][j][k][1].split('/')
 			date_str_next = well_data_sel[i][j][k+1][1].split('/')
