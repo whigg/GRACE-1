@@ -149,7 +149,6 @@ for i in range(nbasin):
 print '\nSelecting data...'
 well_data_sel = []  # basin; site; [siteID; date; water level below surface (ft); lat; lon; siteType]
 for i in range(nbasin):
-	print basin_list[i]
 	well_data_sel.append([])
 	for j in range(len(well_data[i])):
 		well_data_sel[i].append([])
@@ -369,4 +368,141 @@ for i in range(nbasin):
 #fig.savefig('%s/well_daily_climNet_sig%.2f_freq%dmon_window%dyear.png' %(plots_output_dir,sig_level,freq,uni_window), format='png')
 
 
+############################# plot time series in some regions ########################
+print 'Calculating anamolies...\n'
+# calculate anomalies
+well_data_anom = []
+for i in range(nbasin):
+	well_data_anom.append([])
+	for j in range(len(well_data_uni[i])):
+		well_data_anom[i].append([])
+		# calculate mean water level for this site
+		ave_water_level = 0
+		for k in range(len(well_data_uni[i][j])):
+			ave_water_level = ave_water_level + well_data_uni[i][j][k][2]
+		ave_water_level = ave_water_level / len(well_data_uni[i][j])
+		# calculate anamaly for this site
+		for k in range(len(well_data_uni[i][j])):
+			anom = well_data_uni[i][j][k][2] - ave_water_level
+			well_data_anom[i][j].append([well_data_uni[i][j][k][0],well_data_uni[i][j][k][1],anom,well_data_uni[i][j][k][3],well_data_uni[i][j][k][4],well_data_uni[i][j][k][5]])
+
+###### plot northeast U.S. ######
+#ave_anom_tm = np.zeros(nseg)
+#count = np.zeros(nseg)
+#for i in range(nbasin):
+#	for j in range(len(well_data_anom[i])):
+#		lat = well_data_anom[i][j][0][3]
+#		lon = well_data_anom[i][j][0][4]
+#		if lat>40 and lat<50 and lon>-82 and lon<-65:  # if in the region
+#			for k in range(len(well_data_anom[i][j])):
+#				date_str = well_data_uni[i][j][k][1].split('/')
+#				date = dt.datetime(year=int(date_str[2]), month=int(date_str[0]), day=int(date_str[1]))
+#				for t in range(nseg):
+#					if (date-first_day[t]).days>=0 and (last_day[t]-date).days>=0: # if in this time segment
+#						ave_anom_tm[t] = ave_anom_tm[t] + well_data_anom[i][j][k][2]
+#						count[t] = count[t] + 1
+#						break
+#ave_anom_tm = ave_anom_tm / count  # unit: ft
+#ave_anom_tm = ave_anom_tm * 12 * 25.4  # unit: mm
+#
+#fig = plt.figure()
+#plt.plot_date(first_day, ave_anom_tm)
+#plt.plot_date(first_day, ave_anom_tm, 'b-')
+#
+#xi = []
+#for t in range(nseg):
+#	xi.append((first_day[t]-start_date).days)
+#A = np.array([xi, np.ones(np.shape(xi)[0])])
+#y = ave_anom_tm
+#w = np.linalg.lstsq(A.T,y)[0] # y = w[0]* x + w[1]; x: days
+#x_plot = []
+#y_plot = []
+#for t in range(nseg):
+#	x_plot.append(start_date+dt.timedelta(days=xi[t]))
+#	y_plot.append(w[0]*xi[t]+w[1])
+#plt.plot_date(x_plot, y_plot, 'k--')
+#plt.xlabel('Year', fontsize=16)
+#plt.ylabel('Water level anomaly (mm)', fontsize=16)
+#plt.title('Average water level anomaly, Climate Response, northeast U.S.', fontsize=16)
+#fig.savefig('%s/ts_anom_daily_allSites_freq%dmon_norteast_us.png' %(plots_output_dir, freq), format='png')
+#
+###### plot Virginia ######
+#ave_anom_tm = np.zeros(nseg)
+#count = np.zeros(nseg)
+#for i in range(nbasin):
+#	for j in range(len(well_data_anom[i])):
+#		lat = well_data_anom[i][j][0][3]
+#		lon = well_data_anom[i][j][0][4]
+#		if lat>35 and lat<39 and lon>-80 and lon<-75:  # if in the region
+#			for k in range(len(well_data_anom[i][j])):
+#				date_str = well_data_uni[i][j][k][1].split('/')
+#				date = dt.datetime(year=int(date_str[2]), month=int(date_str[0]), day=int(date_str[1]))
+#				for t in range(nseg):
+#					if (date-first_day[t]).days>=0 and (last_day[t]-date).days>=0: # if in this time segment
+#						ave_anom_tm[t] = ave_anom_tm[t] + well_data_anom[i][j][k][2]
+#						count[t] = count[t] + 1
+#						break
+#ave_anom_tm = ave_anom_tm / count  # unit: ft
+#ave_anom_tm = ave_anom_tm * 12 * 25.4  # unit: mm
+#
+#fig = plt.figure()
+#plt.plot_date(first_day, ave_anom_tm)
+#plt.plot_date(first_day, ave_anom_tm, 'b-')
+#
+#xi = []
+#for t in range(nseg):
+#	xi.append((first_day[t]-start_date).days)
+#A = np.array([xi, np.ones(np.shape(xi)[0])])
+#y = ave_anom_tm
+#w = np.linalg.lstsq(A.T,y)[0] # y = w[0]* x + w[1]; x: days
+#x_plot = []
+#y_plot = []
+#for t in range(nseg):
+#	x_plot.append(start_date+dt.timedelta(days=xi[t]))
+#	y_plot.append(w[0]*xi[t]+w[1])
+#plt.plot_date(x_plot, y_plot, 'k--')
+#plt.xlabel('Year', fontsize=16)
+#plt.ylabel('Water level anomaly (mm)', fontsize=16)
+#plt.title('Average water level anomaly, Climate Response, Virginia', fontsize=16)
+#fig.savefig('%s/ts_anom_daily_allSites_freq%dmon_virginia.png' %(plots_output_dir, freq), format='png')
+#
+###### plot Georgia ######
+#ave_anom_tm = np.zeros(nseg)
+#count = np.zeros(nseg)
+#for i in range(nbasin):
+#	for j in range(len(well_data_anom[i])):
+#		lat = well_data_anom[i][j][0][3]
+#		lon = well_data_anom[i][j][0][4]
+#		if lat>30 and lat<35 and lon>-85 and lon<-80:  # if in the region
+#			for k in range(len(well_data_anom[i][j])):
+#				date_str = well_data_uni[i][j][k][1].split('/')
+#				date = dt.datetime(year=int(date_str[2]), month=int(date_str[0]), day=int(date_str[1]))
+#				for t in range(nseg):
+#					if (date-first_day[t]).days>=0 and (last_day[t]-date).days>=0: # if in this time segment
+#						ave_anom_tm[t] = ave_anom_tm[t] + well_data_anom[i][j][k][2]
+#						count[t] = count[t] + 1
+#						break
+#ave_anom_tm = ave_anom_tm / count  # unit: ft
+#ave_anom_tm = ave_anom_tm * 12 * 25.4  # unit: mm
+#
+#fig = plt.figure()
+#plt.plot_date(first_day, ave_anom_tm)
+#plt.plot_date(first_day, ave_anom_tm, 'b-')
+#
+#xi = []
+#for t in range(nseg):
+#	xi.append((first_day[t]-start_date).days)
+#A = np.array([xi, np.ones(np.shape(xi)[0])])
+#y = ave_anom_tm
+#w = np.linalg.lstsq(A.T,y)[0] # y = w[0]* x + w[1]; x: days
+#x_plot = []
+#y_plot = []
+#for t in range(nseg):
+#	x_plot.append(start_date+dt.timedelta(days=xi[t]))
+#	y_plot.append(w[0]*xi[t]+w[1])
+#plt.plot_date(x_plot, y_plot, 'k--')
+#plt.xlabel('Year', fontsize=16)
+#plt.ylabel('Water level anomaly (mm)', fontsize=16)
+#plt.title('Average water level anomaly, Climate Response, Georgia', fontsize=16)
+#fig.savefig('%s/ts_anom_daily_allSites_freq%dmon_georgia.png' %(plots_output_dir, freq), format='png')
 

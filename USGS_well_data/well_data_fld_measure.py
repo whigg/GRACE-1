@@ -629,7 +629,7 @@ for i in range(nbasin):
 	for j in range(len(well_data_anom[i])):
 		lat = well_data_anom[i][j][0][3]
 		lon = well_data_anom[i][j][0][4]
-		if lat>35 and lat<40 and lon>-80 and lon<-75:  # if in the region
+		if lat>35 and lat<39 and lon>-80 and lon<-75:  # if in the region
 			for k in range(len(well_data_anom[i][j])):
 				date_str = well_data_uni[i][j][k][1].split('/')
 				date = dt.datetime(year=int(date_str[2]), month=int(date_str[0]), day=int(date_str[1]))
