@@ -1,0 +1,42 @@
+#!/bin/csh -x
+########################
+# user defined
+# ######################
+set ori_asc_map_file = /usr1/ymao/other/GRACE/plotting/trend_map/input/gwtrends2.asc
+set output_dir = /usr1/ymao/other/GRACE/USGS_well_data/output
+
+set trend_value_list = /usr1/ymao/other/GRACE/USGS_well_data/output/trend_mm_yr
+set sd_resid_value_list = /usr1/ymao/other/GRACE/USGS_well_data/output/sd_resid_mm
+
+########################
+# trend
+########################
+cp $ori_asc_map_file $output_dir/temp.asc
+set i = 1
+while ( $i < = 11 )
+	set IN = `awk '{if(NR==i)print $1}'  i=$i $trend_value_list `
+	set OUT = `awk '{if(NR==i)print $2}' i=$i $trend_value_list `
+	echo $IN $OUT
+	sed 's|'"$IN"'|'"$OUT"'|g' $output_dir/temp.asc >! $output_dir/temp2.asc
+	mv $output_dir/temp2.asc $output_dir/temp.asc
+	@ i++
+end
+mv $output_dir/temp.asc $output_dir/trend_mm_yr.asc
+
+########################
+# SD of residual
+########################
+cp $ori_asc_map_file $output_dir/temp.asc
+set i = 1
+while ( $i < = 11 )
+	set IN = `awk '{if(NR==i)print $1}'  i=$i $sd_resid_value_list `
+	set OUT = `awk '{if(NR==i)print $2}' i=$i $sd_resid_value_list `
+	echo $IN $OUT
+	sed 's|'"$IN"'|'"$OUT"'|g' $output_dir/temp.asc >! $output_dir/temp2.asc
+	mv $output_dir/temp2.asc $output_dir/temp.asc
+	@ i++
+end
+mv $output_dir/temp.asc $output_dir/sd_resid_mm.asc
+
+
+

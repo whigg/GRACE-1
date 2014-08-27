@@ -1,0 +1,25 @@
+well_data_fld_measure.py
+	process field measurement data
+	data process:
+		1. for each site, make sure that the type of water level data is consistent (i.e., either all are 'depth under land surface' or all are 'water level relative to a datum'). If not consistent, using the height of land surface at the site (this information is in site info file) to convert them to the same type
+		2. if for an observation, either of its [water level data]/[measuring date] is missing or invalid, we think this observation is invalid; if for a site, there is no valid observation, discard this site
+		3. if the lat/lon information at a site is missing, discard this site
+		4. if a certain observation has a status code (e.g., pumping, damage, etc.), discard the whole site
+	data selection and filtering:
+		1. select the first data in each time segment (e.g., in each month); if there is no data in this segment, skip this segment
+		2. check uniformity - for the selected data at each site, if there is a certain-window-continious missing data (e.g., 2-year window), discard this site
+	Sy
+		1. Sy is estimated from the three digits in National Aquifer Code (6 types altogether). If National Aquifer Code is missing for a site, Sy is estimated as 0.1
+
+well_data_daily_measure.py
+	process daily data
+	data process:
+		1. if the lat/lon information at a site is missing, discard this site
+	data selection and filtering:
+		1. select the first data in each time segment (e.g., in each month); if there is no data in this segment, skip this segment
+		2. check uniformity - for the selected data at each site, if there is a certain-window-continious missing data (e.g., 2-year window), discard this site
+	Sy
+		1. Sy is estimated from the three digits in National Aquifer Code (6 types altogether). If National Aquifer Code is missing for a site, Sy is estimated as 0.1
+
+
+

@@ -13,6 +13,7 @@ well_data_dir = '/usr1/ymao/other/GRACE/USGS_well_data/daily_data_climNet'  # ag
 site_info_dir = '/usr1/ymao/other/GRACE/USGS_well_data/site_info/site_info_climNet_v2'  # Site identification number,Decimal latitude,Decimal longitude,Altitude of Gage/land surface [ft],Local aquifer type code,Field water-level measurements count
 basin_list_path = '/usr1/ymao/other/GRACE/input/basin.list'  # list of 11 basin names
 plots_output_dir = '/usr1/ymao/other/GRACE/USGS_well_data/plots'
+output_dir = '/usr1/ymao/other/GRACE/USGS_well_data/output'
 Sy_list_path = '/usr1/ymao/other/GRACE/USGS_well_data/site_info/Sy_national_aquifer_code' # [three digits (in national aquifer code)] [Sy]
 
 sig_level = 0.05  # significance level for trend analysis; 2-sided
@@ -241,8 +242,18 @@ for i in range(nbasin):
 		xi = data_temp[:,0]
 		A = np.array([xi, np.ones(np.shape(xi)[0])])
 		y = data_temp[:,1] 
-		w = np.linalg.lstsq(A.T,y)[0]  # trend: w[0]; unit: ft/day
-		trend = w[0] * 12 * 25.4 * 365.25 # convert unit to: mm/yr
+		m, c = np.linalg.lstsq(A.T,y)[0]  # y = mx + c; trend: m (ft/day); intercept: c (ft)
+		trend = m * 12 * 25.4 * 365.25 # convert unit to: mm/yr
+		# calculate standard deviation of residuals
+		residual = np.empty(len(well_data_uni[i][j]))
+		for k in range(len(well_data_uni[i][j])):
+			date_str = well_data_uni[i][j][k][1].split('/')
+			date = dt.datetime(year=int(date_str[2]), month=int(date_str[0]), day=int(date_str[1]))
+			date_ind = (date-start_date).days
+			wl_est = m * date_ind + c  # ft
+			residual[k] = well_data_uni[i][j][k][2] - wl_est  # ft
+		residual = residual * 12 * 25.4  # convert to mm
+		std_resid = np.std(residual)  # mm
 		# calculate p-value using Mann-Kendall test
 		n = np.shape(y)[0]
 		s = 0
@@ -282,10 +293,19 @@ for i in range(nbasin):
 				Sy = float(Sy_list[kk][1])
 				flag = 1
 				break
-		if flag==0:  # if no valid aquifer type
-			Sy = ''
+		if flag==0:  # if no valid aquifer type, , estimate Sy as 0.1
+			Sy = 0.1 
 		# put all data in well_trend
-		well_trend[i][j].append([well_data_uni[i][j][0][0],well_data_uni[i][j][0][3],well_data_uni[i][j][0][4],trend, well_data_uni[i][j][0][5], p_value, Sy])
+		well_trend[i][j].append([well_data_uni[i][j][0][0],well_data_uni[i][j][0][3],well_data_uni[i][j][0][4],trend, well_data_uni[i][j][0][5], p_value, Sy, std_resid])
+
+# write trend and residual results into files
+for i in range(nbasin):
+	f = open('%s/%s' %(output_dir,basin_list[i]), 'w')
+	if len(well_trend[i])>0:
+		for j in range(len(well_trend[i])):
+			Sy = well_trend[i][j][0][6]
+			f.write('%s %.6f %.6f %.4f %.4f\n' %(well_trend[i][j][0][0], well_trend[i][j][0][1], well_trend[i][j][0][2], well_trend[i][j][0][3]*Sy, well_trend[i][j][0][7]*Sy))  # siteID, lat, lon, storage trend (mm/yr), storage SD of residual (mm)
+	f.close()
 
 
 ################################# plot storage trend ################################
@@ -304,11 +324,10 @@ m.drawstates()
 for i in range(nbasin):
 	for j in range(len(well_trend[i])):
 		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][6]!='':
-			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+		cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
 cbar = plt.colorbar(cs, fraction=0.045)
 cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, Climate Response Network, \n2002-2013, all sites', fontsize=16)
+plt.title('Aug GW storage trend, CRN, \n2002-2013, all sites', fontsize=16)
 
 fig.savefig('%s/storage_Aug_daily_climNet_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
@@ -326,13 +345,12 @@ m.drawstates()
 
 for i in range(nbasin):
 	for j in range(len(well_trend[i])):
-#		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
 		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][4]=='C' and well_trend[i][j][0][6]!='':
+		if well_trend[i][j][0][4]=='C':
 			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
 cbar = plt.colorbar(cs, fraction=0.045)
 cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, Climate Response Network, \n2002-2013, confined sites', fontsize=16)
+plt.title('Aug GW storage trend, CRN, \n2002-2013, confined sites', fontsize=16)
 
 fig.savefig('%s/storage_Aug_daily_climNet_confined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
@@ -351,11 +369,11 @@ m.drawstates()
 for i in range(nbasin):
 	for j in range(len(well_trend[i])):
 		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][4]=='U' and well_trend[i][j][0][6]!='':
+		if well_trend[i][j][0][4]=='U':
 			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
 cbar = plt.colorbar(cs, fraction=0.045)
 cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, Climate Response Network, 2002-2013, unconfined sites', fontsize=16)
+plt.title('Aug GW storage trend, CRN, \n2002-2013, unconfined sites', fontsize=16)
 
 fig.savefig('%s/storage_Aug_daily_climNet_unconfined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
@@ -375,11 +393,11 @@ for i in range(nbasin):
 	for j in range(len(well_trend[i])):
 #		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
 		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][4]!='C' and well_trend[i][j][0][4]!='U' and well_trend[i][j][0][6]!='':
+		if well_trend[i][j][0][4]!='C' and well_trend[i][j][0][4]!='U':
 			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
 cbar = plt.colorbar(cs, fraction=0.045)
 cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, Climate Response Network, 2002-2013, unknown-type sites', fontsize=16)
+plt.title('Aug GW storage trend, CRN, \n2002-2013, unknown-type sites', fontsize=16)
 
 fig.savefig('%s/storage_Aug_daily_climNet_unknown_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
@@ -400,12 +418,32 @@ for i in range(nbasin):
 	for j in range(len(well_trend[i])):
 		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
 		if well_trend[i][j][0][5]>(1.0-sig_level/2.0) or well_trend[i][j][0][5]<sig_level/2.0:
-			if well_trend[i][j][0][6]!='':
-				cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
 cbar = plt.colorbar(cs, fraction=0.045)
 cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, 2002-2013, all sites with significant trend', fontsize=16)
+plt.title('Aug GW storage trend, CRN, \n2002-2013, all sites with significant trend', fontsize=16)
 
 fig.savefig('%s/storage_Aug_daily_climNet_sig%.2f_freq%dmon_window%dyear.png' %(plots_output_dir,sig_level,freq,uni_window), format='png')
 
+########################### plot SD of residulas ################################
+# plot all sites
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
 
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][7]*well_trend[i][j][0][6], cmap='jet_r', vmin=0, vmax=100, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Standard deviation (mm)', fontsize=16)
+plt.title('Standard deviation in residual Aug GW, \nCRN, 2002-2013, all sites', fontsize=16)
+
+fig.savefig('%s/sd_resid_Aug_daily_climNet_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')

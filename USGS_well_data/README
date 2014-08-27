@@ -1,0 +1,55 @@
+Run scripts:
+	1. run 'well_data_*.py' -> output well maps and well trend/resid data
+	2. run 'calc_basin.py' -> average over each basin
+	3. run 'rewrite.scr' -> write asc map files
+	4. run 'plot_basin_trend_sd.py' (change ouput figure name)
+
+
+
+ori_data_from_Liz (dir)
+	original well data from Liz and Sayma (/nfs/hydro6/usr1/eclark/OTHER_WORK/GRACE_trend/USGS_well_data)
+	field measurement
+
+daily_data_climNet
+	daily data for sites in Climate Response Network
+	[agency] [siteID] [date] [water level (ft)] [data status]
+	water level might be daily mean level below surface, max level below surfac, or level above a datum; but the data type is consistent for each site
+	data status:
+		 A  Approved for publication -- Processing and review completed
+		 P  Provisional data subject to revision
+		 e  Value has been estimated
+		the status will appear as A; P; A:e; P:e; A:> (not sure what last one means)
+
+site info (dir)
+	all_sites_info (dir)
+		info of all sites; many of them don't have data available
+		in csv format
+	siteID_count_have_data (dir)
+		a list of sites that have available data
+		[siteID] [number of available data]
+	site_info_fld_have_data (dir)
+		site info for those sites that have available data
+		in csv format
+		Site identification number,Decimal latitude,Decimal longitude,Altitude of Gage/land surface [ft],Local aquifer type code,Field water-level measurements count
+	site_num_climNet_allSites
+		a list of site numbers in Climate Response Network
+		some of the listed sites might be outside of Eastern U.S. region
+	all_sites_info_v2 (dir)
+		download sites info for all field measurement again;
+		include national aquifer code and well depth;
+		the sites might be different than those in 'all_sites_info' dir; not sure why
+	site_info_fld_have_data_v2 (dir)
+		the same sites as 'site_info_fld_have_data' dir
+		in csv format
+		Site identification number,Decimal latitude,Decimal longitude,Altitude of Gage/land surface,Local aquifer type code,National aquifer code,Well depth,Field water-level measurements count
+	Sy_national_aquifer_code
+		the three number digits in national aquifer code and its corresponding estimated Sy
+		[three digits] [Sy]
+
+
+
+
+
+
+
+
