@@ -27,8 +27,10 @@ nbasin = len(basin_list)
 trend_resid_data = []
 for i in range(nbasin):
 	trend_resid_data.append([])
-	if os.stat('%s/%s' %(trend_resid_data_dir,basin_list[i]))[6]>0:
+	if os.stat('%s/%s' %(trend_resid_data_dir,basin_list[i]))[6]>0:  # if file is not empy
 		trend_resid_data[i] = np.loadtxt('%s/%s' %(trend_resid_data_dir,basin_list[i]))
+		if np.shape(np.shape(trend_resid_data[i]))[0]==1:  # if the file only has single line
+			trend_resid_data[i] = trend_resid_data[i].reshape(1, np.shape(trend_resid_data[i])[0])
 
 f = open(basin_value_ori_path, 'r')
 basin_value_ori = []
@@ -46,6 +48,7 @@ for i in range(nbasin):
 	if trend_resid_data[i]!=[]:
 		print basin_list[i]
 		nsite = np.shape(trend_resid_data[i])[0]
+		print nsite
 		for j in range(nsite):
 			trend_ave[i] = trend_ave[i] + trend_resid_data[i][j,3]
 			sd_resid_ave[i] = sd_resid_ave[i] + trend_resid_data[i][j,4]

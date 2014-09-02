@@ -18,6 +18,7 @@ lons, lats = np.meshgrid(lons, lats)
 infile2 = '/usr1/ymao/other/GRACE/USGS_well_data/output/trend_mm_yr.asc'
 trends=np.genfromtxt(infile2,skip_header=6,dtype=float)
 trends = np.ma.masked_where(trends==-9999, trends)
+trends = np.ma.masked_where(trends==0, trends)
 fig = plt.figure()
 ax = fig.add_axes([0.1,0.1,0.8,0.8])
 m = Basemap(llcrnrlon=-120.,llcrnrlat=20.,urcrnrlon=-60.,urcrnrlat=50.,            rsphere=(6378137.00,6356752.3142),            resolution='l',area_thresh=1000.,projection='lcc',            lat_1=50.,lon_0=-107.,ax=ax)
@@ -33,8 +34,8 @@ m.drawmeridians(meridians,labels=[1,0,0,1])
 #ticks = np.array([-1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2], np.float)
 cbar = plt.colorbar(p, orientation='vertical', fraction=0.05, pad=0.02)
 cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, field measurement, \n2002-2013, all sites')  ############# change this ##############
-plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/trend_basin_Aug_fld.png', format='png') ############ change this ###########
+plt.title('Aug GW storage trend, CRN, \n2002-2013, sites deeper than 100 ft')  ############# change this ##############
+plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/trend_basin_Aug_daily_climNet_depthGT100.png', format='png') ############ change this ###########
 
 
 infile = '/usr1/ymao/other/GRACE/plotting/trend_map/input/latlon.xy'
@@ -49,6 +50,7 @@ data=np.genfromtxt(infile2,skip_header=6,dtype=float)
 fig = plt.figure()
 ax = fig.add_axes([0.1,0.1,0.8,0.8])
 datam = np.ma.masked_where(data==-9999, data)
+datam = np.ma.masked_where(datam==0, datam)
 print infile+' min = '+str(datam.min())+' max = '+str(datam.max())
 m = Basemap(llcrnrlon=-120.,llcrnrlat=20.,urcrnrlon=-60.,urcrnrlat=50.,            rsphere=(6378137.00,6356752.3142),            resolution='l',area_thresh=1000.,projection='lcc',            lat_1=50.,lon_0=-107.,ax=ax)
 lons, lats = np.meshgrid(lons, lats)
@@ -63,6 +65,6 @@ meridians = np.arange(10.,360.,10.)
 m.drawmeridians(meridians,labels=[1,0,0,1])
 cbar = plt.colorbar(p, orientation='vertical', fraction=0.05, pad=0.02)
 cbar.set_label('Standard deviation (mm)', fontsize=16)
-plt.title('Standard deviation in residual Aug GW storage, \nfield measurement, 2002-2013, all sites')
-plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/resid_basin_Aug_fld.png', format='png') 
+plt.title('Standard deviation in residual Aug GW storage, \nCRN, 2002-2013, sites deeper than 100 ft')
+plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/resid_basin_Aug_daily_CRN_depthGT100.png', format='png') 
 

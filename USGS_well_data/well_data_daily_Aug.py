@@ -10,7 +10,7 @@ from scipy.stats import norm
 
 ######################## user defined #######################
 well_data_dir = '/usr1/ymao/other/GRACE/USGS_well_data/daily_data_climNet'  # agency, siteID, date, water level (ft), data status
-site_info_dir = '/usr1/ymao/other/GRACE/USGS_well_data/site_info/site_info_climNet_v2'  # Site identification number,Decimal latitude,Decimal longitude,Altitude of Gage/land surface [ft],Local aquifer type code,Field water-level measurements count
+site_info_dir = '/usr1/ymao/other/GRACE/USGS_well_data/site_info/site_info_climNet_v2'  # Site identification number,Decimal latitude,Decimal longitude,Altitude of Gage/land surface,Local aquifer type code,National aquifer code,Well depth,Field water-level measurements count
 basin_list_path = '/usr1/ymao/other/GRACE/input/basin.list'  # list of 11 basin names
 plots_output_dir = '/usr1/ymao/other/GRACE/USGS_well_data/plots'
 output_dir = '/usr1/ymao/other/GRACE/USGS_well_data/output'
@@ -108,7 +108,7 @@ for i in range(nbasin):
 
 ######################### process data ############################
 print 'Processing data...'
-well_data = []   # basin; site; [siteID; date; water level below surface (ft); lat; lon; siteType; data status; national aquifer code]
+well_data = []   # basin; site; [siteID; date; water level below surface (ft); lat; lon; siteType; data status; national aquifer code; well depth (ft)]
 for i in range(nbasin): 
 #	print basin_list[i]
 	# initialize
@@ -116,7 +116,7 @@ for i in range(nbasin):
 	siteID = well_data_ori[i][0][1]
 	well_data[i].append([])
 	count_site = 0
-	# find lat, lon, siteType and aquifer code of the site
+	# find lat, lon, siteType, aquifer code and well depth of the site
 	for k in range(len(site_info[i])): 
 		if site_info[i][k][0]==siteID:
 			if site_info[i][k][1]!='':
@@ -129,6 +129,10 @@ for i in range(nbasin):
 				lon = ''
 			site_type = site_info[i][k][4]
 			national_aquifer_code = site_info[i][k][5]
+			if site_info[i][k][6]!='':
+				well_depth = float(site_info[i][k][6])
+			else:
+				well_depth = ''
 			break
 
 	for j in range(len(well_data_ori[i])):
@@ -148,10 +152,14 @@ for i in range(nbasin):
 						lon = ''
 					site_type = site_info[i][k][4]
 					national_aquifer_code = site_info[i][k][5]
+					if site_info[i][k][6]!='':
+						well_depth = float(site_info[i][k][6])
+					else:
+						well_depth = ''
 					break
 
 		if well_data_ori[i][j][3]!='' and well_data_ori[i][j][3]!='Eqp':  # if water level data is available
-			well_data[i][count_site].append([well_data_ori[i][j][1], well_data_ori[i][j][2], float(well_data_ori[i][j][3]), lat, lon, site_type, well_data_ori[i][j][4], national_aquifer_code]) 
+			well_data[i][count_site].append([well_data_ori[i][j][1], well_data_ori[i][j][2], float(well_data_ori[i][j][3]), lat, lon, site_type, well_data_ori[i][j][4], national_aquifer_code, well_depth]) 
 
 	# delete invalid sites
 	for jj in range(len(well_data[i])-1,-1,-1):
@@ -176,7 +184,7 @@ for i in range(nbasin):
 				if len(date_str)==3:
 					date = dt.datetime(year=int(date_str[2]), month=int(date_str[0]), day=int(date_str[1]))
 					if date.year==start_year+t and date.month==8: # if this date is in this August
-						well_data_sel[i][j].append([well_data[i][j][k][0],well_data[i][j][k][1],well_data[i][j][k][2],well_data[i][j][k][3],well_data[i][j][k][4],well_data[i][j][k][5],well_data[i][j][k][7]])
+						well_data_sel[i][j].append([well_data[i][j][k][0],well_data[i][j][k][1],well_data[i][j][k][2],well_data[i][j][k][3],well_data[i][j][k][4],well_data[i][j][k][5],well_data[i][j][k][7], well_data[i][j][k][8]])
 						start_search_ind = k + 1
 						break
 					elif (date-dt.datetime(year=start_year+t,month=8,day=31)).days>0: # if this date is after this August
@@ -217,16 +225,38 @@ for i in range(nbasin):
 			if flag==0:
 				well_data_uni[i].append([])
 				for k in range(len(well_data_sel[i][j])):
-					well_data_uni[i][count_site].append([well_data_sel[i][j][k][0],well_data_sel[i][j][k][1],well_data_sel[i][j][k][2],well_data_sel[i][j][k][3],well_data_sel[i][j][k][4],well_data_sel[i][j][k][5],well_data_sel[i][j][k][6]])
+					well_data_uni[i][count_site].append([well_data_sel[i][j][k][0],well_data_sel[i][j][k][1],well_data_sel[i][j][k][2],well_data_sel[i][j][k][3],well_data_sel[i][j][k][4],well_data_sel[i][j][k][5],well_data_sel[i][j][k][6], well_data_sel[i][j][k][7]])
 				count_site = count_site + 1
 
 for i in range(nbasin):
 	print basin_list[i], len(well_data[i]), len(well_data_sel[i]), len(well_data_uni[i])
 
+################################# plot well depth ################################
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
+
+for i in range(nbasin):
+	if len(well_data_uni[i])>0:
+		for j in range(len(well_data_uni[i])):
+			x, y = m(well_data_uni[i][j][0][4], well_data_uni[i][j][0][3])
+			cs = plt.scatter(x, y, s=20, c=well_data_uni[i][j][0][7], cmap='jet', vmax=200, vmin=0, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Well depth (feet)', fontsize=16)
+plt.title('Well depth, CRN sites', fontsize=16)
+
+fig.savefig('%s/well_depth_Aug_daily_climNet_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
 ######################### calculate and plot trend - each site ###########################
 print '\nCalculating and plotting trend at each site...'
-well_trend = []  # basin; site; [siteID, lat, lon, trend (mm/yr), siteType, p-value, Sy]
+well_trend = []  # basin; site; [siteID, lat, lon, trend (mm/yr), siteType, p-value, Sy, SD_residual(mm), well_depth(ft)]
 for i in range(nbasin):
 	well_trend.append([])
 	for j in range(len(well_data_uni[i])):
@@ -296,7 +326,7 @@ for i in range(nbasin):
 		if flag==0:  # if no valid aquifer type, , estimate Sy as 0.1
 			Sy = 0.1 
 		# put all data in well_trend
-		well_trend[i][j].append([well_data_uni[i][j][0][0],well_data_uni[i][j][0][3],well_data_uni[i][j][0][4],trend, well_data_uni[i][j][0][5], p_value, Sy, std_resid])
+		well_trend[i][j].append([well_data_uni[i][j][0][0],well_data_uni[i][j][0][3],well_data_uni[i][j][0][4],trend, well_data_uni[i][j][0][5], p_value, Sy, std_resid, well_data_uni[i][j][0][7]])
 
 # write trend and residual results into files
 for i in range(nbasin):
@@ -307,6 +337,7 @@ for i in range(nbasin):
 			f.write('%s %.6f %.6f %.4f %.4f\n' %(well_trend[i][j][0][0], well_trend[i][j][0][1], well_trend[i][j][0][2], well_trend[i][j][0][3]*Sy, well_trend[i][j][0][7]*Sy))  # siteID, lat, lon, storage trend (mm/yr), storage SD of residual (mm)
 	f.close()
 
+exit()
 
 ################################# plot storage trend ################################
 # plot all sites
@@ -331,99 +362,145 @@ plt.title('Aug GW storage trend, CRN, \n2002-2013, all sites', fontsize=16)
 
 fig.savefig('%s/storage_Aug_daily_climNet_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
 
+# plot sites <= 100 ft
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
+
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		if well_trend[i][j][0][8]<=100:
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Trend (mm/year)', fontsize=16)
+plt.title('Aug GW storage trend, CRN, \n2002-2013, sites shallower than 100 ft', fontsize=16)
+
+fig.savefig('%s/storage_Aug_daily_climNet_depthLT100_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+
+# plot sites > 100 ft
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
+
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		if well_trend[i][j][0][8]>100:
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Trend (mm/year)', fontsize=16)
+plt.title('Aug GW storage trend, CRN, \n2002-2013, sites deeper than 100 ft', fontsize=16)
+
+fig.savefig('%s/storage_Aug_daily_climNet_depthGT100_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+
 # plot confined sites
-fig = plt.figure(figsize=(10,10))
-ax = fig.add_axes([0.1,0.1,0.8,0.8])
-m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
-m.drawcoastlines()
-m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
-m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
-m.drawmapboundary(fill_color='0.85')
-m.fillcontinents(zorder=0, color='0.75')
-m.drawcountries()
-m.drawstates()
-
-for i in range(nbasin):
-	for j in range(len(well_trend[i])):
-		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][4]=='C':
-			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
-cbar = plt.colorbar(cs, fraction=0.045)
-cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, CRN, \n2002-2013, confined sites', fontsize=16)
-
-fig.savefig('%s/storage_Aug_daily_climNet_confined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
-
-# plot unconfined sites
-fig = plt.figure(figsize=(10,10))
-ax = fig.add_axes([0.1,0.1,0.8,0.8])
-m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
-m.drawcoastlines()
-m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
-m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
-m.drawmapboundary(fill_color='0.85')
-m.fillcontinents(zorder=0, color='0.75')
-m.drawcountries()
-m.drawstates()
-
-for i in range(nbasin):
-	for j in range(len(well_trend[i])):
-		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][4]=='U':
-			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
-cbar = plt.colorbar(cs, fraction=0.045)
-cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, CRN, \n2002-2013, unconfined sites', fontsize=16)
-
-fig.savefig('%s/storage_Aug_daily_climNet_unconfined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
-
-# plot unknown-type sites
-fig = plt.figure(figsize=(10,10))
-ax = fig.add_axes([0.1,0.1,0.8,0.8])
-m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
-m.drawcoastlines()
-m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
-m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
-m.drawmapboundary(fill_color='0.85')
-m.fillcontinents(zorder=0, color='0.75')
-m.drawcountries()
-m.drawstates()
-
-for i in range(nbasin):
-	for j in range(len(well_trend[i])):
-#		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
-		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][4]!='C' and well_trend[i][j][0][4]!='U':
-			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
-cbar = plt.colorbar(cs, fraction=0.045)
-cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, CRN, \n2002-2013, unknown-type sites', fontsize=16)
-
-fig.savefig('%s/storage_Aug_daily_climNet_unknown_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
-
-
-# plot only significant trends, all sites
-fig = plt.figure(figsize=(10,10))
-ax = fig.add_axes([0.1,0.1,0.8,0.8])
-m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
-m.drawcoastlines()
-m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
-m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
-m.drawmapboundary(fill_color='0.85')
-m.fillcontinents(zorder=0, color='0.75')
-m.drawcountries()
-m.drawstates()
-
-for i in range(nbasin):
-	for j in range(len(well_trend[i])):
-		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
-		if well_trend[i][j][0][5]>(1.0-sig_level/2.0) or well_trend[i][j][0][5]<sig_level/2.0:
-			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
-cbar = plt.colorbar(cs, fraction=0.045)
-cbar.set_label('Trend (mm/year)', fontsize=16)
-plt.title('Aug GW storage trend, CRN, \n2002-2013, all sites with significant trend', fontsize=16)
-
-fig.savefig('%s/storage_Aug_daily_climNet_sig%.2f_freq%dmon_window%dyear.png' %(plots_output_dir,sig_level,freq,uni_window), format='png')
+#fig = plt.figure(figsize=(10,10))
+#ax = fig.add_axes([0.1,0.1,0.8,0.8])
+#m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+#m.drawcoastlines()
+#m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+#m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+#m.drawmapboundary(fill_color='0.85')
+#m.fillcontinents(zorder=0, color='0.75')
+#m.drawcountries()
+#m.drawstates()
+#
+#for i in range(nbasin):
+#	for j in range(len(well_trend[i])):
+#		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+#		if well_trend[i][j][0][4]=='C':
+#			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+#cbar = plt.colorbar(cs, fraction=0.045)
+#cbar.set_label('Trend (mm/year)', fontsize=16)
+#plt.title('Aug GW storage trend, CRN, \n2002-2013, confined sites', fontsize=16)
+#
+#fig.savefig('%s/storage_Aug_daily_climNet_confined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+#
+## plot unconfined sites
+#fig = plt.figure(figsize=(10,10))
+#ax = fig.add_axes([0.1,0.1,0.8,0.8])
+#m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+#m.drawcoastlines()
+#m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+#m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+#m.drawmapboundary(fill_color='0.85')
+#m.fillcontinents(zorder=0, color='0.75')
+#m.drawcountries()
+#m.drawstates()
+#
+#for i in range(nbasin):
+#	for j in range(len(well_trend[i])):
+#		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+#		if well_trend[i][j][0][4]=='U':
+#			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+#cbar = plt.colorbar(cs, fraction=0.045)
+#cbar.set_label('Trend (mm/year)', fontsize=16)
+#plt.title('Aug GW storage trend, CRN, \n2002-2013, unconfined sites', fontsize=16)
+#
+#fig.savefig('%s/storage_Aug_daily_climNet_unconfined_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+#
+## plot unknown-type sites
+#fig = plt.figure(figsize=(10,10))
+#ax = fig.add_axes([0.1,0.1,0.8,0.8])
+#m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+#m.drawcoastlines()
+#m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+#m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+#m.drawmapboundary(fill_color='0.85')
+#m.fillcontinents(zorder=0, color='0.75')
+#m.drawcountries()
+#m.drawstates()
+#
+#for i in range(nbasin):
+#	for j in range(len(well_trend[i])):
+##		print basin_list[i], well_trend[i][j][0][0], well_trend[i][j][0][3]
+#		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+#		if well_trend[i][j][0][4]!='C' and well_trend[i][j][0][4]!='U':
+#			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+#cbar = plt.colorbar(cs, fraction=0.045)
+#cbar.set_label('Trend (mm/year)', fontsize=16)
+#plt.title('Aug GW storage trend, CRN, \n2002-2013, unknown-type sites', fontsize=16)
+#
+#fig.savefig('%s/storage_Aug_daily_climNet_unknown_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+#
+#
+## plot only significant trends, all sites
+#fig = plt.figure(figsize=(10,10))
+#ax = fig.add_axes([0.1,0.1,0.8,0.8])
+#m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+#m.drawcoastlines()
+#m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+#m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+#m.drawmapboundary(fill_color='0.85')
+#m.fillcontinents(zorder=0, color='0.75')
+#m.drawcountries()
+#m.drawstates()
+#
+#for i in range(nbasin):
+#	for j in range(len(well_trend[i])):
+#		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+#		if well_trend[i][j][0][5]>(1.0-sig_level/2.0) or well_trend[i][j][0][5]<sig_level/2.0:
+#			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][3]*well_trend[i][j][0][6], cmap=cm.GMT_no_green_r, vmax=20, vmin=-20, linewidths=0)
+#cbar = plt.colorbar(cs, fraction=0.045)
+#cbar.set_label('Trend (mm/year)', fontsize=16)
+#plt.title('Aug GW storage trend, CRN, \n2002-2013, all sites with significant trend', fontsize=16)
+#
+#fig.savefig('%s/storage_Aug_daily_climNet_sig%.2f_freq%dmon_window%dyear.png' %(plots_output_dir,sig_level,freq,uni_window), format='png')
 
 ########################### plot SD of residulas ################################
 # plot all sites
@@ -447,3 +524,49 @@ cbar.set_label('Standard deviation (mm)', fontsize=16)
 plt.title('Standard deviation in residual Aug GW, \nCRN, 2002-2013, all sites', fontsize=16)
 
 fig.savefig('%s/sd_resid_Aug_daily_climNet_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+
+# plot sites <= 100 ft
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
+
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		if well_trend[i][j][0][8]<=100:
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][7]*well_trend[i][j][0][6], cmap='jet_r', vmin=0, vmax=100, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Standard deviation (mm)', fontsize=16)
+plt.title('Standard deviation in residual Aug GW, \nCRN, 2002-2013, sites shallower than 100 ft', fontsize=16)
+
+fig.savefig('%s/sd_resid_Aug_daily_climNet_depthLT100_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
+
+# plot sites > 100 ft
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_axes([0.1,0.1,0.8,0.8])
+m = Basemap(llcrnrlon=-120., llcrnrlat=20., urcrnrlon=-60., urcrnrlat=50., rsphere=(6378137.00,6356752.3142), resolution='l', area_thresh=1000.,projection='lcc', lat_1=50.,lon_0=-107.,ax=ax)
+m.drawcoastlines()
+m.drawparallels(np.arange(-90., 91., 5.), labels=[1,0,0,1])
+m.drawmeridians(np.arange(-180., 181., 5.), labels=[1,0,0,1])
+m.drawmapboundary(fill_color='0.85')
+m.fillcontinents(zorder=0, color='0.75')
+m.drawcountries()
+m.drawstates()
+
+for i in range(nbasin):
+	for j in range(len(well_trend[i])):
+		x, y = m(well_trend[i][j][0][2], well_trend[i][j][0][1])
+		if well_trend[i][j][0][8]>100:
+			cs = plt.scatter(x, y, s=20, c=well_trend[i][j][0][7]*well_trend[i][j][0][6], cmap='jet_r', vmin=0, vmax=100, linewidths=0)
+cbar = plt.colorbar(cs, fraction=0.045)
+cbar.set_label('Standard deviation (mm)', fontsize=16)
+plt.title('Standard deviation in residual Aug GW, \nCRN, 2002-2013, sites deeper than 100 ft', fontsize=16)
+
+fig.savefig('%s/sd_resid_Aug_daily_climNet_depthGT100_freq%dmon_window%dyear.png' %(plots_output_dir,freq,uni_window), format='png')
