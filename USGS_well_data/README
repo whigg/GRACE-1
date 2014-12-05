@@ -12,7 +12,7 @@ ori_data_from_Liz (dir)
 
 daily_data_climNet
 	daily data for sites in Climate Response Network
-	[agency] [siteID] [date] [water level (ft)] [data status]
+	[agency] [siteID] [date] [water level (ft)] [data status] [water level type; 0 for feet below land surface; 1 for feet above a datum]
 	water level might be daily mean level below surface, max level below surfac, or level above a datum; but the data type is consistent for each site
 	data status:
 		 A  Approved for publication -- Processing and review completed

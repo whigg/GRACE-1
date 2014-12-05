@@ -1,0 +1,16 @@
+data_streamflow
+	12167000.raw - raw daily streamflow data directly downloaded from USGS
+	12167000 - [year] [month] [day] [flow (cfs)]
+
+data_prec
+	fluxes_48.28125_-122.03125_1920_2010 - VIC output from drought monitor (retro); 1920-Sep2014
+		(/raid4/forecast/pnw_sw_monitor/data/pnw4/results/retro/vic/daily/asc/fluxes_48.28125_-122.03125)
+	fluxes_48.28125_-122.03125_2011_Sep2014 - VIC output from drought monitor (spinup_NR); 1920-Sep2014
+		(/raid4/forecast/pnw_sw_monitor/data/pnw4/results/spinup_nearRT/vic/daily/asc/fluxes_48.28125_-122.03125)
+	fluxes_48.28125_-122.03125 - cat the above two
+
+calc_plot_STILLAGUAMISH.py
+	plot time series of 7-day low flow and starting date
+
+plot_DroughtPeriod_LowFlow.py
+	plot scatter plot: drought period vs. lowflow
