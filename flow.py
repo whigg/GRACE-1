@@ -14,9 +14,9 @@ import pdb
 ##########################################
 # user defined
 ##########################################
-data_path = "/usr1/ymao/GRACE/data_streamflow/streamflow_1988_2012"  # data unit: cfs
-start_year = 1988
-end_year = 2007
+data_path = "/usr1/ymao/other/GRACE/data_streamflow/streamflow_1988_2012"  # data unit: cfs
+start_year = 2003
+end_year = 2012
 K = 45   # characteristic time scale; unit: days
 area_index = 1  # 0 for using basin area by Brutsaert; 1 for using drainage area by USGS
 
@@ -29,13 +29,13 @@ station = {}
 for filename in listdir(data_path):
 	station[filename] = np.loadtxt("%s/%s" %(data_path, filename))
 
-area_Bru = np.loadtxt("/usr1/ymao/GRACE/data_streamflow/station_area_Bru")
-area_USGS = np.loadtxt("/usr1/ymao/GRACE/data_streamflow/station_area_Bru")
+area_Bru = np.loadtxt("/usr1/ymao/other/GRACE/data_streamflow/station_area_Bru")
+area_USGS = np.loadtxt("/usr1/ymao/other/GRACE/data_streamflow/station_area_Bru")
 
-station_order = np.loadtxt("/usr1/ymao/GRACE/input/station.order")
-station_basin = np.loadtxt("/usr1/ymao/GRACE/input/station.basin", usecols=(0,1))
+station_order = np.loadtxt("/usr1/ymao/other/GRACE/input/station.order")
+station_basin = np.loadtxt("/usr1/ymao/other/GRACE/input/station.basin", usecols=(0,1))
 
-f = open('/usr1/ymao/GRACE/input/basin.values.ori', 'r')
+f = open('/usr1/ymao/other/GRACE/input/basin.values.ori', 'r')
 basin_values_ori = []
 while 1:
 	line = f.readline().rstrip("\n")
@@ -44,12 +44,12 @@ while 1:
 	basin_values_ori.append(line)
 f.close
 
-#########################################
+#==========================================#
 # calculate 7-day low flow
 # yL7[std][year][index] contains 7-day low flow and corresponding month
 # for each year at each station
 # if data is missing, then flow and month is -1 
-#########################################
+#==========================================#
 yL7 = {}
 for std in station:
 	yL7[std] = np.empty((nyear, 2))
@@ -92,13 +92,20 @@ for std in (station):
 		yL7[std][yr-start_year][0] = min
 		yL7[std][yr-start_year][1] = low_month
 
-#######################################
-# calculate temporal trends by simple linear regression
-#######################################
+#======================================#
+# calculate temporal trends by simple linear regression; and SD of residuals at each station
+#======================================#
 trend_flow = {}
-flow = {}
+std_resid_flow = {}
+flow = {}  # station; [year; flow (cfs)]  (omit missing-data years)
 c = {}
 m = {}
+
+if area_index==0:   # using basin area reported by Brutsaert
+	area = area_Bru
+else:   # using drainage reported by USGS
+	area = area_USGS
+
 for std in station:
 	# copy the non-missing station data and corresponding years into a new array
 	count = 0
@@ -109,26 +116,28 @@ for std in station:
 	count = 0
 	for i in range(np.shape(yL7[std])[0]):
 		if np.absolute(yL7[std][i][0]+1)>0.0001:  # if not missing
-			flow[std][count][0] = start_year + i
-			flow[std][count][1] = yL7[std][i][0]
+			flow[std][count,0] = start_year + i
+			flow[std][count,1] = yL7[std][i][0]
 			count = count + 1
 	# calculate trend by simple linear regression
 	A = np.array([flow[std][:,0], np.ones(np.shape(flow[std])[0])])
 	m[std], c[std] = np.linalg.lstsq(A.T, flow[std][:,1])[0]    # y = mx + c 
 	trend_flow[std] = m[std]   # flow trend in cfs/yr
 
-trend_storage = {}
-if area_index==0:   # using basin area reported by Brutsaert
-	area = area_Bru
-else:   # using drainage reported by USGS
-	area = area_USGS
+	# calculate standard deviation of residual
+	flow_est = m[std] * flow[std][:,0] + c[std]
+	std_resid_flow[std] = np.std(flow[std][:,1]-flow_est)  # cfs
 
+trend_storage = {}
+std_resid_storage = {}
 for i in range(np.shape(area)[0]):
 	std = '0' + str(int(area[i][0]))
 	trend_storage[std] = trend_flow[std] * K / area[i][1]  # storage trend in (cfs*day)/(yr*km2)
 	trend_storage[std] = trend_storage[std] * np.power(30.48,3) * 86400 / np.power(10,9) # storage trend in mm/yr
+	std_resid_storage[std] = std_resid_flow[std] * K / area[i][1] # storage SD in (cfs*day)/km2
+	std_resid_storage[std] = std_resid_storage[std] * np.power(30.48,3) * 86400 / np.power(10,9) # storage SD in mm
 
-# calculate p value (two-tailed)
+# calculate p value of linear regression (two-tailed)
 p = {}
 for std in station:
 	SSE = np.sum(np.power(flow[std][:,1]-(c[std]+m[std]*flow[std][:,0]), 2))
@@ -141,14 +150,14 @@ for std in station:
 	else:   # if trend.=0
 		p[std] = (1-tcdf) * 2
 
-# write storage trend and corresponding p value into file
-f = open('/usr1/ymao/GRACE/output/trend_%s_%s_K%d' %(start_year,end_year,K), 'w')
+# write storage trend, corresponding p value and SD into file
+f = open('/usr1/ymao/other/GRACE/output/trend_%s_%s_K%d' %(start_year,end_year,K), 'w')
 for i in range(np.shape(station_order)[0]):
 	std = '0' + str(int(station_order[i]))
 	if p[std]>=0.005:
-		f.write("%s %.5f %.2f\n" %(std, trend_storage[std], p[std]))
+		f.write("%s %.5f %.2f %.5f\n" %(std, trend_storage[std], p[std], std_resid_storage[std]))
 	else:
-		f.write("%s %.5f %.1g\n" %(std, trend_storage[std], p[std]))
+		f.write("%s %.5f %.1g %.5f\n" %(std, trend_storage[std], p[std], std_resid_storage[std]))
 f.close()
 
 # write yL7 and occurrence month  (41 columns, each column is the yL7 (or month) for all years at one basin)
@@ -167,7 +176,7 @@ for i in range(np.shape(area)[0]):
 			yL7_mm_d[std][y] = yL7_mm_d[std][y] * np.power(30.48,3) * 86400 / np.power(10,9) # mm/d 
 
 # write yL7 to file
-f = open('/usr1/ymao/GRACE/output/yL7_%s_%s' %(start_year,end_year), 'w')
+f = open('/usr1/ymao/other/GRACE/output/yL7_%s_%s' %(start_year,end_year), 'w')
 for y in range(nyear):
 	for i in range(np.shape(station_order)[0]):
 		std = '0' + str(int(station_order[i]))
@@ -179,7 +188,7 @@ for y in range(nyear):
 f.close()
 
  # write occurrence month to file
-f = open('/usr1/ymao/GRACE/output/yL7_occur_month_%s_%s' %(start_year,end_year), 'w')
+f = open('/usr1/ymao/other/GRACE/output/yL7_occur_month_%s_%s' %(start_year,end_year), 'w')
 for y in range(nyear):
 	for i in range(np.shape(station_order)[0]):
 		std = '0' + str(int(station_order[i]))
@@ -191,66 +200,33 @@ for y in range(nyear):
 f.close()
 
 
-
+#======================================================================================#
 # calculate and write areal mean storage trend and standard deviation for 11 basins
+#======================================================================================#
  # calculate areal mean yL7 and write to file
 total_area = np.zeros(11)
+trend_storage_basin = np.empty(11)
+var_resid_storage_basin = np.empty(11)
 for i in range(np.shape(station_order)[0]):
 	std = '0' + str(int(station_order[i]))
 	num_basin = station_basin[i][1] - 1
-	if np.absolute(yL7_mm_d[std][y]+1)>0.0001:  # if yL7 for this station this year is not missing
-		total_area[num_basin] = total_area[num_basin] + area[i][1]
+	total_area[num_basin] = total_area[num_basin] + area[i][1]
 
-yL7_basin = np.zeros((11, nyear))
-for y in range(nyear):
-	for i in range(np.shape(station_order)[0]):
-		std = '0' + str(int(station_order[i]))
-		num_basin = station_basin[i][1] - 1
-		if np.absolute(yL7_mm_d[std][y]+1)>0.0001:  # if yL7 for this station this year is not missing
-			yL7_basin[num_basin][y] = yL7_basin[num_basin][y] + yL7_mm_d[std][y] * area[i][1]
-	for i in range(11):
-		yL7_basin[i][y] = yL7_basin[i][y] / total_area[i]
+	trend_storage_basin[num_basin] = trend_storage_basin[num_basin] + trend_storage[std] * area[i][1]
+	var_resid_storage_basin[num_basin] = var_resid_storage_basin[num_basin] + np.square(std_resid_storage[std]) * area[i][1]
 
-f = open('./output/mean_yL7_larger_basin_%s_%s' %(start_year, end_year), 'w')
-for y in range(nyear):
-	for i in range(11):
-		f.write('%f ' %yL7_basin[i][y])
-	f.write('\n')
-f.close()
-
- # calculate trend for flow
-m = np.empty(11)
-c = np.empty(11)
-trend_flow_basin = np.empty(11)
-for i in range(11):
-	A = np.array([range(start_year, end_year+1), np.ones(nyear)])
-	m[i], c[i] = np.linalg.lstsq(A.T, yL7_basin[i])[0]    # y = mx + c
-	trend_flow_basin[i] = m[i]   # flow trend for 11 basins in mm/(d*year)
-	print yL7_basin[i]
-
- # calculate trend for storage
-trend_storage_basin = np.empty(11)
-for i in range(11):
-	trend_storage_basin[i] = trend_flow_basin[i] * K # storage trend for 11 basins in mm/year
-
- # calculate standard deviation of residuals for 11 basins
-std_resid = np.empty(11)
-for i in range(11):
-	flow_est = np.empty(nyear)
-	residual = np.empty(nyear)
-	for y in range(nyear):
-		flow_est[y] = (start_year+y) * m[i] + c[i]
-		residual[y] = (yL7_basin[i][y]  - flow_est[y]) * K
-	std_resid[i] = np.std(residual)
+trend_storage_basin = trend_storage_basin / total_area
+var_resid_storage_basin = var_resid_storage_basin / total_area
+std_resid_storage_basin = np.sqrt(var_resid_storage_basin)
 
  # write basin storage trend and residual SD into files
-f = open('/usr1/ymao/GRACE/output/trend_%s_%s_map' %(start_year, end_year), 'w')
+f = open('/usr1/ymao/other/GRACE/output/trend_%s_%s_map' %(start_year, end_year), 'w')
 for i in range(11):
 	f.write('%s %f\n' %(basin_values_ori[i], trend_storage_basin[i]))
 f.close()
 
-f = open('/usr1/ymao/GRACE/output/trend_resid_%s_%s_map' %(start_year, end_year), 'w')
+f = open('/usr1/ymao/other/GRACE/output/trend_resid_%s_%s_map' %(start_year, end_year), 'w')
 for i in range(11):
-	f.write('%s %f\n' %(basin_values_ori[i], std_resid[i]))
+	f.write('%s %f\n' %(basin_values_ori[i], std_resid_storage_basin[i]))
 f.close()
 
