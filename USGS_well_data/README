@@ -1,8 +1,12 @@
 Run scripts:
 	1. run 'well_data_*.py' -> output well maps and well trend/resid data
-	2. run 'calc_basin.py' -> average over each basin
-	3. run 'rewrite.scr' -> write asc map files
-	4. run 'plot_basin_trend_sd.py' (change ouput figure name)
+	2. copy 11 basin data to /nfs/jet/tools/SAMBA/ymao/GRACE/data_for_Thiessen_polygon/ori_data; use arcGIS scripts to calculate Thiessen polygon areas. Specificlly:
+		2.1. Might need to delete files in: /nfs/jet/tools/SAMBA/ymao/GRACE/data_for_Thiessen_polygon/gis/output and /nfs/jet/tools/SAMBA/ymao/GRACE/data_for_Thiessen_polygon/gis/temp
+		2.2. Open arcGIS and run the script in: /nfs/jet/tools/SAMBA/ymao/GRACE/data_for_Thiessen_polygon/ThiessenPoly_arcPython.txt (Note: only calculate for hydrologic regions with at least one well data)
+		2.3. Copy output of 11 basin data from /nfs/jet/tools/SAMBA/ymao/GRACE/data_for_Thiessen_polygon/gis/output back to a directory under ./output/[dir] (this dir will be an input to 'calc_basin.py')
+	3. run 'calc_basin.py' -> average over each basin
+	4. run 'rewrite.scr' -> write asc map files
+	5. run 'plot_basin_trend_sd.py' (change ouput figure name)
 
 
 
