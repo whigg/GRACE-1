@@ -344,14 +344,27 @@ for i in range(nbasin):
 			# put all data in well_trend
 			well_trend[i][j].append([well_data_uni[i][j][0][0],well_data_uni[i][j][0][3],well_data_uni[i][j][0][4],trend, well_data_uni[i][j][0][5], p_value, Sy, std_resid, well_data_uni[i][j][0][7]])
 
-# write trend and residual results into files
+# write trend and residual results into files; one file for each basin, for Thiessen polygon basin average
 for i in range(nbasin):
-	f = open('%s/%s' %(output_dir,basin_list[i]), 'w')
+	f = open('%s/%s.txt' %(output_dir,basin_list[i]), 'w')
+	f.write('siteID,lat,lon,trend_mm_yr,sd_mm\n')
 	if len(well_trend[i])>0:
 		for j in range(len(well_trend[i])):
 			Sy = well_trend[i][j][0][6]
-			f.write('%s %.6f %.6f %.4f %.4f\n' %(well_trend[i][j][0][0], well_trend[i][j][0][1], well_trend[i][j][0][2], well_trend[i][j][0][3]*Sy, well_trend[i][j][0][7]*Sy))  # siteID, lat, lon, storage trend (mm/yr), storage SD of residual (mm)
+			f.write('%s,%.6f,%.6f,%.4f,%.4f\n' %(well_trend[i][j][0][0], well_trend[i][j][0][1], well_trend[i][j][0][2], well_trend[i][j][0][3]*Sy, well_trend[i][j][0][7]*Sy))  # siteID, lat, lon, storage trend (mm/yr), storage SD of residual (mm)
 	f.close()
+
+exit()
+
+# writ trend, SD of residual and well depth into one file
+f = open('%s/trend_sd_Aug_FLD' %(output_dir), 'w')
+for i in range(nbasin):
+	if len(well_trend[i])>0:
+		for j in range(len(well_trend[i])):
+			Sy = well_trend[i][j][0][6]
+			if well_trend[i][j][0][8]!='':
+				f.write('%s %.6f %.6f %.4f %.4f %.1f\n' %(well_trend[i][j][0][0], well_trend[i][j][0][1], well_trend[i][j][0][2], well_trend[i][j][0][3]*Sy, well_trend[i][j][0][7]*Sy, well_trend[i][j][0][8]))  # siteID, lat, lon, storage trend (mm/yr), storage SD of residual (mm), well depth (ft)
+f.close()
 
 # write time series into one file
 f = open('%s/ts_Aug_FLD' %output_dir, 'w')

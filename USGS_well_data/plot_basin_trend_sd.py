@@ -35,7 +35,7 @@ m.drawmeridians(meridians,labels=[1,0,0,1])
 cbar = plt.colorbar(p, orientation='vertical', fraction=0.05, pad=0.02)
 cbar.set_label('Trend (mm/year)', fontsize=16)
 plt.title('Aug GW storage trend, CRN, \n2002-2013, all sites')  ############# change this ##############
-plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/trend_basin_Aug_daily_CRN.png', format='png') ############ change this ###########
+plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/trend_basin_Aug_daily_CRN_thiessen.png', format='png') ############ change this ###########
 
 
 infile = '/usr1/ymao/other/GRACE/plotting/trend_map/input/latlon.xy'
@@ -66,5 +66,5 @@ m.drawmeridians(meridians,labels=[1,0,0,1])
 cbar = plt.colorbar(p, orientation='vertical', fraction=0.05, pad=0.02)
 cbar.set_label('Standard deviation (mm)', fontsize=16)
 plt.title('Standard deviation in residual Aug GW storage, \nCRN, 2002-2013, all sites')
-plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/resid_basin_Aug_daly_CRN.png', format='png') 
+plt.savefig('/usr1/ymao/other/GRACE/USGS_well_data/plots/resid_basin_Aug_daly_CRN_thiessen.png', format='png') 
 

@@ -7,6 +7,7 @@ import datetime as dt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
+import statsmodels.api as sm
 
 def cmap_drought_listed(vmin=-1, vmax=1):
     '''listed drought colormap'''
@@ -38,6 +39,7 @@ vic_Aug_output_dir = '/usr1/ymao/other/GRACE/USGS_well_data/soil_moist_data/vic_
 plot_output_dir = '/usr1/ymao/other/GRACE/USGS_well_data/plots'
 missing_value = -9999
 nyear = 12
+frac = 0.65  # f factor in LOWESS smothing
 
 #########################################################################
 ############################# load data #################################
@@ -181,6 +183,22 @@ plt.ylabel('kendall\'s tau', fontsize=16)
 plt.title('Kendall\'s tau between Aug well obs. and soil moist. from VIC\nalpha = 0.1, 1-sided', fontsize=16)
 fig.savefig('%s/scatter_tau_wellDepth_Aug.png' %plot_output_dir, format='png')
 
+# plot scatter plot with LOWESS smoothing
+yest = sm.nonparametric.lowess(well_sm_tau[:,3], well_sm_tau[:,2], frac=frac)
+fig = plt.figure()
+plt.plot(well_sm_tau[:,2], well_sm_tau[:,3], 'o', markersize=5)
+plt.plot(yest[:,0], yest[:,1], 'k-', linewidth=3, label='LOWESS smooth, f=%.2f' %frac)
+xx = range(int(np.min(well_sm_tau[:,2]))-1, int(np.max(well_sm_tau[:,2]))+1, 10)
+plt.plot(xx, crit_tau*np.ones(len(xx)), 'r--', label='Confidence boundary')
+plt.plot(xx, -crit_tau*np.ones(len(xx)), 'r--')
+plt.xlabel('Well depth (feet)', fontsize=16)
+plt.ylabel('kendall\'s tau', fontsize=16)
+plt.legend(prop={'size':16})
+plt.title('Kendall\'s tau between Aug well obs. and soil moist. from VIC\nalpha = 0.1, 1-sided', fontsize=16)
+fig.savefig('%s/scatter_LOWESS_tau_wellDepth_Aug.png' %plot_output_dir, format='png')
+
+exit()
+
 # plot tau map, all cells
 fig = plt.figure(figsize=(10,8))
 ax = plt.axes([0, 0.08, 1, 0.75])
@@ -251,7 +269,6 @@ cbar.set_label('Kendall\'s tau', fontsize=14)
 plt.text(0.5, 1.1, 'Kendall\'s tau between Aug well obs. and soil moist. from VIC\nOnly grid cells with significant correlation', horizontalalignment='center', \
          fontsize=16, transform = ax.transAxes)
 fig.savefig('%s/map_tau_sigCorr_Aug.png' %plot_output_dir, format='png')
-
 
 
 
